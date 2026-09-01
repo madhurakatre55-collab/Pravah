@@ -1,8 +1,198 @@
 import os
 from crewai_tools import tool
 from dotenv import load_dotenv
+from ml_models import WeatherPredictionModel, RouteRiskClassifier, TravelTimePredictor
 
 load_dotenv()
+
+# ==================== INITIALIZE ML MODELS ====================
+weather_ml_model = WeatherPredictionModel()
+route_risk_model = RouteRiskClassifier()
+travel_time_model = TravelTimePredictor()
+
+
+# ==================== ML-BASED PREDICTION TOOLS ====================
+@tool("Predict Route Safety Score")
+def predict_route_safety_score(temperature: float, precipitation: float, 
+                               wind_speed: float, visibility: float) -> dict:
+    """
+    Uses trained ML model to predict route safety score based on weather conditions.
+    Score: 0-100 (higher = safer)
+    
+    Args:
+        temperature (float): Current temperature in Celsius
+        precipitation (float): Precipitation amount in mm
+        wind_speed (float): Wind speed in km/h
+        visibility (float): Visibility in km
+        
+    Returns:
+        dict: Safety score and detailed risk assessment
+    """
+    # Prepare features
+    weather_features = [temperature, precipitation, wind_speed, visibility]
+    
+    try:
+        # Get ML prediction
+        safety_score = weather_ml_model.predict(weather_features)
+        
+        # Normalize to 0-100
+        safety_score = max(0, min(100, safety_score))
+        
+        # Determine risk level
+        if safety_score >= 80:
+            risk_level = "LOW"
+            warning = "Excellent weather conditions for travel"
+        elif safety_score >= 60:
+            risk_level = "MODERATE"
+            warning = "Acceptable weather, use caution"
+        elif safety_score >= 40:
+            risk_level = "HIGH"
+            warning = "Poor weather conditions, consider alternate plans"
+        else:
+            risk_level = "CRITICAL"
+            warning = "Severe weather, travel not recommended"
+        
+        return {
+            "safety_score": float(round(safety_score, 2)),
+            "risk_level": risk_level,
+            "warning": warning,
+            "weather_conditions": {
+                "temperature_celsius": temperature,
+                "precipitation_mm": precipitation,
+                "wind_speed_kmh": wind_speed,
+                "visibility_km": visibility
+            },
+            "model_type": "RandomForestRegressor",
+            "prediction_confidence": "High"
+        }
+    
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": "Could not predict safety score. Make sure to train models first using train_models.py"
+        }
+
+
+@tool("Classify Route Risk Level")
+def classify_route_risk(congestion_level: float, weather_severity: float, 
+                       accident_proximity: float, road_condition: float) -> dict:
+    """
+    Uses trained ML model to classify route risk level (LOW/MEDIUM/HIGH).
+    
+    Args:
+        congestion_level (float): Traffic congestion 0-100%
+        weather_severity (float): Weather severity 0-10 (0=clear, 10=severe)
+        accident_proximity (float): Distance to nearest accident in km
+        road_condition (float): Road condition score 0-100 (100=excellent)
+        
+    Returns:
+        dict: Risk classification with probability score
+    """
+    route_features = [congestion_level, weather_severity, accident_proximity, road_condition]
+    
+    try:
+        # Get ML prediction
+        risk_level, probability = route_risk_model.predict(route_features)
+        
+        # Generate recommendation
+        if risk_level == "LOW":
+            recommendation = "Route is safe. Proceed with normal precautions."
+        elif risk_level == "MEDIUM":
+            recommendation = "Use caution. Monitor traffic and weather updates."
+        else:  # HIGH
+            recommendation = "High risk route. Consider alternative paths or delay travel."
+        
+        return {
+            "risk_level": risk_level,
+            "confidence_score": float(round(probability * 100, 2)),
+            "recommendation": recommendation,
+            "factors": {
+                "congestion_level": congestion_level,
+                "weather_severity": weather_severity,
+                "accident_proximity_km": accident_proximity,
+                "road_condition": road_condition
+            },
+            "model_type": "GradientBoostingClassifier",
+            "action": "Avoid" if risk_level == "HIGH" else "Monitor" if risk_level == "MEDIUM" else "Proceed"
+        }
+    
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": "Could not classify route risk. Make sure to train models first using train_models.py"
+        }
+
+
+@tool("Predict Travel Time")
+def predict_travel_time(distance: float, congestion: float, 
+                       weather_impact: float, time_of_day: float) -> dict:
+    """
+    Uses trained ML model to predict travel time based on route and conditions.
+    
+    Args:
+        distance (float): Route distance in km
+        congestion (float): Traffic congestion level 0-100%
+        weather_impact (float): Weather impact factor 0-5 (0=no impact, 5=severe)
+        time_of_day (float): Time of day in 24-hour format (0-24)
+        
+    Returns:
+        dict: Predicted travel time with breakdown
+    """
+    route_features = [distance, congestion, weather_impact, time_of_day]
+    
+    try:
+        # Get ML prediction
+        travel_time_minutes = travel_time_model.predict(route_features)
+        
+        # Convert to hours and minutes
+        hours = int(travel_time_minutes // 60)
+        minutes = int(travel_time_minutes % 60)
+        
+        # Estimate arrival time
+        from datetime import datetime, timedelta
+        departure_time = datetime.now()
+        arrival_time = departure_time + timedelta(minutes=travel_time_minutes)
+        
+        # Analyze factors
+        base_time = distance / 50  # Assume ~50km/h base speed
+        time_overhead = travel_time_minutes - base_time
+        
+        factors_info = []
+        if congestion > 50:
+            factors_info.append(f"High congestion (+{int((congestion/100)*travel_time_minutes)} min)")
+        if weather_impact > 2:
+            factors_info.append(f"Severe weather (+{int((weather_impact/5)*travel_time_minutes)} min)")
+        
+        # Rush hour detection
+        if (time_of_day >= 8 and time_of_day <= 10) or (time_of_day >= 17 and time_of_day <= 19):
+            factors_info.append("Rush hour traffic detected")
+        
+        return {
+            "predicted_travel_time": {
+                "minutes": float(round(travel_time_minutes, 2)),
+                "formatted": f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
+            },
+            "departure_time": departure_time.isoformat(),
+            "estimated_arrival": arrival_time.isoformat(),
+            "route_details": {
+                "distance_km": distance,
+                "congestion_percent": congestion,
+                "weather_impact_factor": weather_impact,
+                "time_of_day_24h": time_of_day
+            },
+            "contributing_factors": factors_info if factors_info else ["Optimal conditions"],
+            "base_travel_time_minutes": float(round(base_time, 2)),
+            "model_type": "RandomForestRegressor",
+            "prediction_confidence": "High"
+        }
+    
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": "Could not predict travel time. Make sure to train models first using train_models.py"
+        }
+
+
 
 # ==================== WEATHER TOOLS ====================
 @tool("Get Weather Data")
@@ -19,7 +209,7 @@ def get_weather_data(location: str) -> dict:
     """
     # TODO: Integrate with real weather API (OpenWeatherMap, WeatherAPI, etc.)
     # For now, returning mock data structure
-    return {
+    weather_data = {
         "location": location,
         "temperature": 22,
         "conditions": "Partly Cloudy",
@@ -31,6 +221,20 @@ def get_weather_data(location: str) -> dict:
         "weather_alerts": [],
         "is_safe_for_travel": True
     }
+    
+    # Use ML model to get safety score
+    safety_prediction = predict_route_safety_score(
+        temperature=weather_data["temperature"],
+        precipitation=weather_data["precipitation"],
+        wind_speed=weather_data["wind_speed"],
+        visibility=weather_data["visibility"]
+    )
+    
+    weather_data["ml_safety_score"] = safety_prediction.get("safety_score", 0)
+    weather_data["ml_risk_level"] = safety_prediction.get("risk_level", "UNKNOWN")
+    
+    return weather_data
+
 
 
 # ==================== ROAD STATUS TOOLS ====================

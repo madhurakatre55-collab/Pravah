@@ -6,7 +6,10 @@ from tools import (
     get_weather_data,
     get_road_status,
     get_route_info,
-    get_nearby_alerts
+    get_nearby_alerts,
+    predict_route_safety_score,
+    classify_route_risk,
+    predict_travel_time
 )
 
 load_dotenv()
@@ -57,8 +60,8 @@ Weather_Risk_Agent = Agent(
     backstory="""You are an expert weather and safety analyst specializing in travel conditions. 
 You analyze weather patterns, temperature, precipitation, visibility, and wind conditions to 
 provide comprehensive safety assessments. You give clear warnings about severe weather that 
-could impact route planning and travel safety.""",
-    tools=[get_weather_data],
+could impact route planning and travel safety. You use ML models to predict safety scores.""",
+    tools=[get_weather_data, predict_route_safety_score],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
@@ -72,8 +75,8 @@ Accessibility_Agent = Agent(
     backstory="""You are a transportation accessibility expert who evaluates road conditions 
 including traffic congestion, road closures, construction zones, and accessibility issues. 
 You provide current road status and identify any obstacles that might affect route planning 
-or navigation.""",
-    tools=[get_road_status],
+or navigation. You use ML models to classify route risk levels.""",
+    tools=[get_road_status, classify_route_risk],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
@@ -87,8 +90,9 @@ Route_Agent = Agent(
     backstory="""You are an expert route optimization specialist who uses real-time data to 
 calculate the best possible routes. You consider weather, road conditions, accessibility data, 
 and user preferences to recommend routes that are safe, efficient, and practical. You provide 
-travel time estimates and clear turn-by-turn guidance.""",
-    tools=[get_route_info],
+travel time estimates and clear turn-by-turn guidance. You use ML models to predict accurate 
+travel times.""",
+    tools=[get_route_info, predict_travel_time],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
