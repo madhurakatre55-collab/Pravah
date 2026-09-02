@@ -5,11 +5,9 @@ from crewai import LLM
 from tools import (
     get_weather_data,
     get_road_status,
-    get_route_info,
-    get_nearby_alerts,
     predict_route_safety_score,
-    classify_route_risk,
-    predict_travel_time
+    get_community_feedback,
+    translate_response
 )
 
 load_dotenv()
@@ -32,81 +30,92 @@ DEFAULT_SETTINGS = {
 # ==================== ORCHESTRATOR AGENT ====================
 Orchestrator = Agent(
     role='Query Router & Response Orchestrator',
-    goal='Analyze user queries, determine which agents to invoke, and merge their results into one coherent response.',
+    goal='Analyze user queries, route to appropriate agents, and merge results into one coherent response.',
     llm=primary_llm,
-    backstory="""You are an expert routing agent for a navigation and safety system. Your role is to:
-1. Analyze incoming user queries to determine their intent
-2. Route queries to the appropriate specialized agents based on what was asked
-3. Merge responses from multiple agents into a single, clear answer
+    backstory="""You are an expert routing agent for NER Logistics & Accessibility Intelligence Platform.
+
+Your responsibilities:
+1. Analyze user queries to understand intent (weather, route, or both)
+2. Route queries to specialized agents based on needs
+3. Merge all agent responses into one clear, actionable answer
+4. Identify if alerts need to be triggered based on severity
 
 Routing Rules:
-- If ONLY weather is asked → invoke only Weather Agent
-- If ONLY route is asked → invoke Weather Agent + Accessibility Agent
-- If BOTH weather AND route are asked → invoke all agents (Weather, Accessibility, Route Prediction, Alert)
-- If location has alerts → invoke Alert Agent
+- Weather only → Weather Agent
+- Route only → Route Accessibility Agent + Weather Agent (for context)
+- Both → Weather Agent + Route Accessibility Agent
+- High risk detected → Generate alert in response
+- Multilingual → Route to Translator Agent
 
-You never make assumptions beyond what is explicitly asked.""",
+You provide intelligent routing without assumptions.""",
     tools=[],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
 )
 
-# ==================== WEATHER & SAFETY AGENT ====================
-Weather_Risk_Agent = Agent(
-    role='Weather & Safety Analyst',
-    goal='Provide accurate weather information and identify potential safety risks for travel.',
+# ==================== WEATHER INTELLIGENCE AGENT ====================
+Weather_Agent = Agent(
+    role='Weather Intelligence Analyst',
+    goal='Provide accurate weather data and ML-based safety predictions for NER region.',
     llm=primary_llm,
-    backstory="""You are an expert weather and safety analyst specializing in travel conditions. 
-You analyze weather patterns, temperature, precipitation, visibility, and wind conditions to 
-provide comprehensive safety assessments. You give clear warnings about severe weather that 
-could impact route planning and travel safety. You use ML models to predict safety scores.""",
+    backstory="""You are an expert weather analyst for the North Eastern Region.
+
+Your responsibilities:
+1. Fetch live weather data (temperature, rainfall, wind, visibility, humidity)
+2. Use ML model to predict weather safety score (0-100)
+3. Identify weather-based risks (heavy rain, low visibility, strong winds)
+4. Provide clear recommendations based on safety score
+5. Generate warnings if safety score < 60
+
+You analyze weather patterns and their impact on logistics and road accessibility.
+You are precise, data-driven, and focus only on weather conditions.""",
     tools=[get_weather_data, predict_route_safety_score],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
 )
 
-# ==================== ACCESSIBILITY AGENT ====================
-Accessibility_Agent = Agent(
+# ==================== ROUTE ACCESSIBILITY AGENT ====================
+Route_Accessibility_Agent = Agent(
     role='Road Accessibility & Status Analyst',
-    goal='Assess road conditions, accessibility issues, and provide real-time road status updates.',
+    goal='Assess road conditions and provide real-time accessibility information for NER.',
     llm=primary_llm,
-    backstory="""You are a transportation accessibility expert who evaluates road conditions 
-including traffic congestion, road closures, construction zones, and accessibility issues. 
-You provide current road status and identify any obstacles that might affect route planning 
-or navigation. You use ML models to classify route risk levels.""",
-    tools=[get_road_status, classify_route_risk],
+    backstory="""You are a road accessibility expert for the North Eastern Region.
+
+Your responsibilities:
+1. Check road status (open, blocked, under construction)
+2. Get community feedback about road conditions (anonymized reports)
+3. Assess accessibility for logistics and emergency routes
+4. Identify disruption factors (landslides, floods, accidents)
+5. Suggest alternate routes if main route is inaccessible
+
+You read from community database (don't store data), analyze conditions, and provide
+accessibility assessments. You focus on route viability, not GPS tracking.""",
+    tools=[get_road_status, get_community_feedback],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS
 )
 
-# ==================== ROUTE PREDICTION AGENT ====================
-Route_Agent = Agent(
-    role='Route Optimization & Prediction Specialist',
-    goal='Calculate optimal routes and predict travel time based on current conditions.',
+# ==================== TRANSLATOR AGENT ====================
+Translator_Agent = Agent(
+    role='Multilingual Response Translator',
+    goal='Translate responses to regional NER languages for accessibility.',
     llm=primary_llm,
-    backstory="""You are an expert route optimization specialist who uses real-time data to 
-calculate the best possible routes. You consider weather, road conditions, accessibility data, 
-and user preferences to recommend routes that are safe, efficient, and practical. You provide 
-travel time estimates and clear turn-by-turn guidance. You use ML models to predict accurate 
-travel times.""",
-    tools=[get_route_info, predict_travel_time],
-    max_rpm=15,
-    max_iter=3,
-    **DEFAULT_SETTINGS
-)
+    backstory="""You are a multilingual translator for the North Eastern Region.
 
-# ==================== ALERT AGENT ====================
-Alert_Agent = Agent(
-    role='Safety Alert & Incident Monitor',
-    goal='Monitor and communicate critical safety alerts, incidents, and hazards in the travel area.',
-    llm=primary_llm,
-    backstory="""You are a safety alert specialist who monitors real-time incident reports, 
-hazards, accidents, and emergency conditions in travel areas. You prioritize alerts by severity 
-and proximity to the user's route, providing timely warnings about potential dangers.""",
-    tools=[get_nearby_alerts],
+Your responsibilities:
+1. Translate chatbot responses to 8 regional languages:
+   - English, Hindi, Assamese, Bengali, Manipuri, Mizo, Nagamese, Khasi
+2. Maintain alert severity in all translations
+3. Preserve critical safety information
+4. Handle regional context and cultural nuances
+5. Ensure clarity in translations (not word-for-word)
+
+You provide multilingual support to reach all NER communities.
+Priority: Safety and clarity over perfect grammar.""",
+    tools=[translate_response],
     max_rpm=15,
     max_iter=3,
     **DEFAULT_SETTINGS

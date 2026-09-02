@@ -2,282 +2,236 @@ import os
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from ml_models import WeatherPredictionModel, RouteRiskClassifier, TravelTimePredictor
+from ml_models import WeatherPredictionModel
 
 
-def generate_sample_weather_data(n_samples: int = 500) -> tuple:
+def generate_sample_weather_data(n_samples: int = 1000) -> tuple:
     """
-    Generate sample weather data for training (or use real dataset).
+    Generate sample NER weather training data.
     
-    Real datasets to use:
-    - OpenWeatherMap Historical API
-    - Kaggle Weather Datasets
-    - NOAA Weather Data
-    - Weather Underground API
+    In production, use IMD/Kaggle historical data:
+    - IMD: https://mausam.imd.gov.in/
+    - Kaggle: https://kaggle.com/datasets?search=india+weather
     
     Args:
-        n_samples: Number of samples to generate
+        n_samples: Number of training samples to generate
         
     Returns:
-        Tuple of (X, y) - features and targets
+        Tuple of (X, y) - features and safety score targets
     """
-    print(f"📊 Generating {n_samples} sample weather records...")
+    print(f"📊 Generating {n_samples} sample NER weather records...\n")
     
     np.random.seed(42)
     
-    # Features: [temperature, precipitation, wind_speed, visibility]
-    temperatures = np.random.uniform(-10, 40, n_samples)  # °C
-    precipitation = np.random.exponential(2, n_samples)   # mm
-    wind_speeds = np.random.gamma(2, 2, n_samples)       # km/h
-    visibility = np.random.uniform(1, 15, n_samples)      # km
+    # NER Weather Ranges (realistic for Northeast India)
+    temperatures = np.random.uniform(5, 35, n_samples)          # 5-35°C (NER range)
+    precipitation = np.random.exponential(8, n_samples)         # 0-100+ mm (monsoon region)
+    wind_speeds = np.random.gamma(2, 2.5, n_samples)            # 0-40 km/h
+    visibility = np.random.uniform(0.5, 15, n_samples)          # 0.5-15 km
     
     X = np.column_stack([temperatures, precipitation, wind_speeds, visibility])
     
-    # Target: Safety score (0-100) - higher is safer
-    # Calculate based on conditions
+    # Calculate safety score (0-100) based on conditions
+    # Heavy rain + low visibility + high wind = Low safety
     safety_score = 100 - (
-        (np.abs(temperatures - 20) / 40) * 15 +  # Comfort temperature ~20°C
-        (precipitation / 20) * 25 +               # Heavy rain reduces safety
-        (wind_speeds / 20) * 20 +                 # High winds reduce safety
-        ((15 - visibility) / 15) * 25             # Low visibility reduces safety
+        (np.abs(temperatures - 22) / 35) * 10 +      # Comfort temp ~22°C
+        (precipitation / 120) * 40 +                 # Heavy rain is major factor
+        (wind_speeds / 40) * 20 +                    # High wind reduces safety
+        ((15 - visibility) / 15) * 30                # Low visibility is critical
     )
     
-    # Add some noise
+    # Add realistic noise
     safety_score += np.random.normal(0, 5, n_samples)
     safety_score = np.clip(safety_score, 0, 100)
     
     y = safety_score
     
-    print(f"✅ Generated features shape: {X.shape}, targets shape: {y.shape}")
+    print(f"✅ Generated {n_samples} weather samples")
+    print(f"   Feature dimensions: {X.shape}")
+    print(f"   Target range: {y.min():.1f} - {y.max():.1f}\n")
+    
     return X, y
 
 
-def generate_sample_route_data(n_samples: int = 400) -> tuple:
+def load_real_weather_data(filepath: str) -> tuple:
     """
-    Generate sample route risk data for training.
+    Load real NER weather data from CSV.
     
-    Real datasets to use:
-    - Google Maps API (historical traffic)
-    - TomTom Traffic Data
-    - HERE Real-Time Traffic
-    - NHTSA Accident Data
-    
-    Args:
-        n_samples: Number of samples to generate
-        
-    Returns:
-        Tuple of (X, y) - features and targets
-    """
-    print(f"📊 Generating {n_samples} sample route risk records...")
-    
-    np.random.seed(42)
-    
-    # Features: [congestion_level, weather_severity, accident_proximity, road_condition]
-    congestion = np.random.uniform(0, 100, n_samples)     # 0-100%
-    weather_severity = np.random.uniform(0, 10, n_samples) # 0-10
-    accident_proximity = np.random.exponential(5, n_samples) # km
-    road_condition = np.random.uniform(0, 100, n_samples)  # 0-100% (higher = better)
-    
-    X = np.column_stack([congestion, weather_severity, accident_proximity, road_condition])
-    
-    # Target: Risk level (0=low, 1=medium, 2=high)
-    risk_score = (
-        (congestion / 100) * 0.4 +
-        (weather_severity / 10) * 0.3 +
-        (1 - accident_proximity / 30) * 0.2 +
-        (1 - road_condition / 100) * 0.1
-    )
-    
-    # Classify into risk levels
-    y = np.digitize(risk_score, bins=[0.33, 0.67]) 
-    
-    print(f"✅ Generated features shape: {X.shape}, targets shape: {y.shape}")
-    return X, y
-
-
-def generate_sample_travel_time_data(n_samples: int = 600) -> tuple:
-    """
-    Generate sample travel time data for training.
-    
-    Real datasets to use:
-    - Google Maps API (historical travel times)
-    - TomTom Historical Traffic
-    - Waze Routing Data
-    - OpenStreetMap Route Data
-    
-    Args:
-        n_samples: Number of samples to generate
-        
-    Returns:
-        Tuple of (X, y) - features and targets
-    """
-    print(f"📊 Generating {n_samples} sample travel time records...")
-    
-    np.random.seed(42)
-    
-    # Features: [distance, congestion, weather_impact, time_of_day]
-    distances = np.random.gamma(20, 1.5, n_samples)        # km
-    congestion = np.random.uniform(0, 100, n_samples)      # 0-100%
-    weather_impact = np.random.exponential(1, n_samples)   # 0-5
-    time_of_day = np.random.uniform(0, 24, n_samples)      # 0-24 hours
-    
-    X = np.column_stack([distances, congestion, weather_impact, time_of_day])
-    
-    # Target: Travel time (minutes)
-    base_time = distances / 50  # Base speed ~50 km/h
-    congestion_factor = 1 + (congestion / 100) * 1.5  # Up to 2.5x slower
-    weather_factor = 1 + (weather_impact / 5) * 0.5  # Up to 1.5x slower
-    
-    # Rush hour factor (8-10am, 5-7pm)
-    rush_hour_factor = np.where(
-        ((time_of_day >= 8) & (time_of_day <= 10)) | 
-        ((time_of_day >= 17) & (time_of_day <= 19)),
-        1.3,
-        1.0
-    )
-    
-    y = base_time * congestion_factor * weather_factor * rush_hour_factor
-    y += np.random.normal(0, 2, n_samples)  # Add noise
-    y = np.maximum(y, base_time)  # Minimum is base time
-    
-    print(f"✅ Generated features shape: {X.shape}, targets shape: {y.shape}")
-    return X, y
-
-
-def train_all_models():
-    """Train all ML models and save them."""
-    print("=" * 70)
-    print("🚀 TRAINING ALL ML MODELS FOR CHATBOT")
-    print("=" * 70)
-    
-    # Create models directory
-    os.makedirs("models", exist_ok=True)
-    
-    # ==================== Train Weather Prediction Model ====================
-    print("\n" + "🌤️ " * 20)
-    print("1. WEATHER PREDICTION MODEL")
-    print("🌤️ " * 20)
-    
-    X_weather, y_weather = generate_sample_weather_data(n_samples=500)
-    X_train_w, X_test_w, y_train_w, y_test_w = train_test_split(
-        X_weather, y_weather, test_size=0.2, random_state=42
-    )
-    
-    weather_model = WeatherPredictionModel()
-    weather_model.train(X_train_w, y_train_w)
-    
-    # Evaluate
-    train_score_w = weather_model.model.score(
-        weather_model.scaler.transform(X_train_w), y_train_w
-    )
-    test_score_w = weather_model.model.score(
-        weather_model.scaler.transform(X_test_w), y_test_w
-    )
-    
-    print(f"Training R² Score: {train_score_w:.4f}")
-    print(f"Testing R² Score: {test_score_w:.4f}")
-    print(f"Feature Importance: {weather_model.get_feature_importance()}")
-    
-    # ==================== Train Route Risk Classifier ====================
-    print("\n" + "🛣️ " * 20)
-    print("2. ROUTE RISK CLASSIFIER")
-    print("🛣️ " * 20)
-    
-    X_route, y_route = generate_sample_route_data(n_samples=400)
-    X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
-        X_route, y_route, test_size=0.2, random_state=42
-    )
-    
-    route_model = RouteRiskClassifier()
-    route_model.train(X_train_r, y_train_r)
-    
-    # Evaluate
-    train_score_r = route_model.model.score(
-        route_model.scaler.transform(X_train_r), y_train_r
-    )
-    test_score_r = route_model.model.score(
-        route_model.scaler.transform(X_test_r), y_test_r
-    )
-    
-    print(f"Training Accuracy: {train_score_r:.4f}")
-    print(f"Testing Accuracy: {test_score_r:.4f}")
-    
-    # ==================== Train Travel Time Predictor ====================
-    print("\n" + "⏱️ " * 20)
-    print("3. TRAVEL TIME PREDICTOR")
-    print("⏱️ " * 20)
-    
-    X_time, y_time = generate_sample_travel_time_data(n_samples=600)
-    X_train_t, X_test_t, y_train_t, y_test_t = train_test_split(
-        X_time, y_time, test_size=0.2, random_state=42
-    )
-    
-    time_model = TravelTimePredictor()
-    time_model.train(X_train_t, y_train_t)
-    
-    # Evaluate
-    train_score_t = time_model.model.score(
-        time_model.scaler.transform(X_train_t), y_train_t
-    )
-    test_score_t = time_model.model.score(
-        time_model.scaler.transform(X_test_t), y_test_t
-    )
-    
-    print(f"Training R² Score: {train_score_t:.4f}")
-    print(f"Testing R² Score: {test_score_t:.4f}")
-    
-    # ==================== Summary ====================
-    print("\n" + "=" * 70)
-    print("✅ ALL MODELS TRAINED AND SAVED!")
-    print("=" * 70)
-    print(f"Models saved in: models/")
-    print(f"  - weather_predictor.pkl")
-    print(f"  - route_risk_classifier.pkl")
-    print(f"  - travel_time_predictor.pkl")
-    print("\nNext: Use these models in tools.py as agent tools!")
-
-
-def load_real_dataset(filepath: str, dataset_type: str = "weather"):
-    """
-    Load real dataset from CSV file.
-    
-    Dataset sources:
-    - Kaggle: https://www.kaggle.com/datasets
-    - OpenWeatherMap: https://openweathermap.org/
-    - NHTSA: https://www.nhtsa.gov/data
-    - UCI ML: https://archive.ics.uci.edu
+    Expected CSV columns:
+    - temperature_c
+    - precipitation_mm
+    - wind_speed_kmh
+    - visibility_km
+    - is_safe_for_transport (0 or 1, will be converted to 0-100 score)
     
     Args:
         filepath: Path to CSV file
-        dataset_type: Type of dataset (weather, route, time)
         
     Returns:
-        Tuple of (X, y)
+        Tuple of (X, y) - features and targets
     """
-    print(f"📂 Loading dataset from {filepath}...")
+    print(f"📂 Loading weather data from: {filepath}\n")
+    
     df = pd.read_csv(filepath)
     
-    if dataset_type == "weather":
-        X = df[['temperature', 'precipitation', 'wind_speed', 'visibility']].values
+    # Extract features
+    X = df[['temperature_c', 'precipitation_mm', 'wind_speed_kmh', 'visibility_km']].values
+    
+    # Extract target (safety score)
+    if 'is_safe_for_transport' in df.columns:
+        y = (df['is_safe_for_transport'].values * 100)  # 0->0, 1->100
+    elif 'safety_score' in df.columns:
         y = df['safety_score'].values
+    else:
+        raise ValueError("CSV must have 'is_safe_for_transport' or 'safety_score' column")
     
-    elif dataset_type == "route":
-        X = df[['congestion_level', 'weather_severity', 'accident_proximity', 'road_condition']].values
-        y = df['risk_level'].values
+    print(f"✅ Loaded {len(df)} records from CSV")
+    print(f"   Feature shape: {X.shape}")
+    print(f"   Target range: {y.min():.1f} - {y.max():.1f}\n")
     
-    elif dataset_type == "time":
-        X = df[['distance', 'congestion', 'weather_impact', 'time_of_day']].values
-        y = df['travel_time'].values
-    
-    print(f"✅ Loaded {len(df)} records")
     return X, y
 
 
-if __name__ == "__main__":
-    # Train all models with sample data
-    train_all_models()
+def train_weather_model():
+    """
+    Main training function - trains ONLY weather safety prediction model.
+    """
+    print("=" * 70)
+    print("🚀 TRAINING WEATHER SAFETY PREDICTION MODEL FOR NER")
+    print("=" * 70)
+    print()
     
-    # To use real data instead:
-    # X_weather, y_weather = load_real_dataset("datasets/weather_data.csv", "weather")
-    # weather_model = WeatherPredictionModel()
-    # weather_model.train(X_weather, y_weather)
+    # Create models directory
+    os.makedirs("models", exist_ok=True)
+    print("📁 Models directory ready: ./models/\n")
+    
+    # ==================== Generate or Load Data ====================
+    print("STEP 1: Preparing Training Data")
+    print("-" * 70)
+    
+    # Option 1: Generate synthetic data (for testing)
+    X, y = generate_sample_weather_data(n_samples=1000)
+    
+    # Option 2: Load real IMD data (uncomment when ready)
+    # X, y = load_real_weather_data("datasets/weather_training_cleaned.csv")
+    
+    # ==================== Split Data ====================
+    print("STEP 2: Splitting Training & Testing Data")
+    print("-" * 70)
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+    
+    print(f"✅ Training set: {X_train.shape[0]} samples")
+    print(f"✅ Testing set: {X_test.shape[0]} samples\n")
+    
+    # ==================== Train Model ====================
+    print("STEP 3: Training Weather Safety Model")
+    print("-" * 70)
+    print()
+    
+    weather_model = WeatherPredictionModel()
+    weather_model.train(X_train, y_train)
+    print()
+    
+    # ==================== Evaluate Model ====================
+    print("STEP 4: Model Evaluation")
+    print("-" * 70)
+    
+    train_score = weather_model.model.score(
+        weather_model.scaler.transform(X_train), y_train
+    )
+    test_score = weather_model.model.score(
+        weather_model.scaler.transform(X_test), y_test
+    )
+    
+    print(f"Training R² Score: {train_score:.4f}")
+    print(f"Testing R² Score:  {test_score:.4f}\n")
+    
+    if test_score > 0.80:
+        print("✅ Model performance: EXCELLENT")
+    elif test_score > 0.70:
+        print("✅ Model performance: GOOD")
+    else:
+        print("⚠️  Model performance: Fair (consider collecting more data)")
+    
+    print()
+    
+    # ==================== Feature Importance ====================
+    print("STEP 5: Feature Importance Analysis")
+    print("-" * 70)
+    
+    importance = weather_model.get_feature_importance()
+    for feature, score in sorted(importance.items(), key=lambda x: x[1], reverse=True):
+        print(f"  {feature:20s}: {score:.4f}")
+    
+    print()
+    
+    # ==================== Model Info ====================
+    print("STEP 6: Model Information")
+    print("-" * 70)
+    
+    info = weather_model.get_model_info()
+    for key, value in info.items():
+        print(f"  {key:20s}: {value}")
+    
+    print()
+    print("=" * 70)
+    print("✅ TRAINING COMPLETE!")
+    print("=" * 70)
+    print()
+    print("📋 Summary:")
+    print(f"   Model saved to: {weather_model.model_path}")
+    print(f"   Scaler saved to: {weather_model.scaler_path}")
+    print(f"   Test accuracy (R²): {test_score:.4f}")
+    print()
+    print("🚀 Next step: Run chatbot with 'python mains.py'")
+    print()
+
+
+def test_model_prediction():
+    """
+    Test the trained model with sample weather data.
+    """
+    print("\n" + "=" * 70)
+    print("🧪 TESTING MODEL PREDICTIONS")
+    print("=" * 70 + "\n")
+    
+    weather_model = WeatherPredictionModel()
+    weather_model.load()
+    
+    # Test cases
+    test_cases = [
+        {"name": "Clear Day", "temp": 25, "rain": 0, "wind": 10, "vis": 15},
+        {"name": "Light Rain", "temp": 22, "rain": 5, "wind": 12, "vis": 10},
+        {"name": "Heavy Rain", "temp": 20, "rain": 50, "wind": 25, "vis": 3},
+        {"name": "Severe Storm", "temp": 18, "rain": 100, "wind": 35, "vis": 1},
+    ]
+    
+    print(f"{'Scenario':<20} {'Temp':<8} {'Rain':<8} {'Wind':<8} {'Vis':<8} {'Safety':<10} {'Risk':<10}")
+    print("-" * 80)
+    
+    for test in test_cases:
+        safety = weather_model.predict([test["temp"], test["rain"], test["wind"], test["vis"]])
+        
+        if safety >= 80:
+            risk = "LOW"
+        elif safety >= 60:
+            risk = "MODERATE"
+        elif safety >= 40:
+            risk = "HIGH"
+        else:
+            risk = "CRITICAL"
+        
+        print(f"{test['name']:<20} {test['temp']:<8} {test['rain']:<8} {test['wind']:<8} {test['vis']:<8} {safety:<10.1f} {risk:<10}")
+    
+    print()
+
+
+if __name__ == "__main__":
+    # Train the weather model
+    train_weather_model()
+    
+    # Test predictions
+    test_model_prediction()
