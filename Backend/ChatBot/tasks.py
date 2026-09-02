@@ -17,10 +17,10 @@ Orchestration_Task = Task(
     Steps:
     1. Identify what the user is asking for (weather, route, alerts, combinations)
     2. Based on routing rules:
-       - If ONLY weather asked → set flag to invoke only Weather Agent
-       - If ONLY route asked → set flag to invoke Weather + Accessibility Agents
-       - If BOTH weather AND route asked → set flag to invoke all agents
-       - If alerts are mentioned → add Alert Agent to the routing
+        - If ONLY weather asked → set flag to invoke only Weather Agent
+        - If ONLY route asked → set flag to invoke Weather + Accessibility Agents
+        - If BOTH weather AND route asked → set flag to invoke all agents
+        - If alerts are mentioned → add Alert Agent to the routing
     3. Output clear routing decisions with rationale
     4. Wait for other agents' results to merge them
     

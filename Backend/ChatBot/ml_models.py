@@ -7,12 +7,9 @@ import pandas as pd
 from typing import Dict, List, Tuple
 
 
-class WeatherPredictionModel:
-    """ML model for weather-based route safety prediction"""
-    
-    def __init__(self):
+class WeatherPredictionMode cl: 
         self.model = None
-        self.scaler = StandardScaler()
+        self.scaler = StandardScaler()    
         self.model_path = "models/weather_predictor.pkl"
         self.scaler_path = "models/weather_scaler.pkl"
         self.feature_names = ['temperature', 'precipitation', 'wind_speed', 'visibility']
@@ -25,7 +22,7 @@ class WeatherPredictionModel:
             X_train: Features array (temperature, precipitation, wind_speed, visibility)
             y_train: Target array (safety scores 0-100)
         """
-        print("🔄 Training Weather Prediction Model...")
+        print(" Training Weather Prediction Model...")
         X_scaled = self.scaler.fit_transform(X_train)
         
         self.model = RandomForestRegressor(
@@ -40,7 +37,7 @@ class WeatherPredictionModel:
         os.makedirs("models", exist_ok=True)
         joblib.dump(self.model, self.model_path)
         joblib.dump(self.scaler, self.scaler_path)
-        print("✅ Weather prediction model trained and saved")
+        print(" Weather prediction model trained and saved")
     
     def predict(self, weather_data: List[float]) -> float:
         """
@@ -64,9 +61,9 @@ class WeatherPredictionModel:
         if os.path.exists(self.model_path):
             self.model = joblib.load(self.model_path)
             self.scaler = joblib.load(self.scaler_path)
-            print("✅ Weather model loaded")
+            print(" Weather model loaded")
         else:
-            print("⚠️ Model not found. Train model first using train_models.py")
+            print(" Model not found. Train model first using train_models.py")
     
     def get_feature_importance(self) -> Dict[str, float]:
         """Get feature importance scores"""
@@ -98,7 +95,7 @@ class RouteRiskClassifier:
             X_train: Features array (congestion, weather, accidents, road condition)
             y_train: Target array (0=low, 1=medium, 2=high risk)
         """
-        print("🔄 Training Route Risk Classifier...")
+        print(" Training Route Risk Classifier...")
         X_scaled = self.scaler.fit_transform(X_train)
         
         self.model = GradientBoostingClassifier(
@@ -113,7 +110,7 @@ class RouteRiskClassifier:
         os.makedirs("models", exist_ok=True)
         joblib.dump(self.model, self.model_path)
         joblib.dump(self.scaler, self.scaler_path)
-        print("✅ Route risk classifier trained and saved")
+        print(" Route risk classifier trained and saved")
     
     def predict(self, route_data: List[float]) -> Tuple[str, float]:
         """
@@ -140,9 +137,9 @@ class RouteRiskClassifier:
         if os.path.exists(self.model_path):
             self.model = joblib.load(self.model_path)
             self.scaler = joblib.load(self.scaler_path)
-            print("✅ Route risk classifier loaded")
+            print(" Route risk classifier loaded")
         else:
-            print("⚠️ Model not found. Train model first using train_models.py")
+            print(" Model not found. Train model first using train_models.py")
 
 
 class TravelTimePredictor:
@@ -163,7 +160,7 @@ class TravelTimePredictor:
             X_train: Features array (distance, congestion, weather, time)
             y_train: Target array (travel time in minutes)
         """
-        print("🔄 Training Travel Time Predictor...")
+        print(" Training Travel Time Predictor...")
         X_scaled = self.scaler.fit_transform(X_train)
         
         self.model = RandomForestRegressor(
@@ -178,7 +175,7 @@ class TravelTimePredictor:
         os.makedirs("models", exist_ok=True)
         joblib.dump(self.model, self.model_path)
         joblib.dump(self.scaler, self.scaler_path)
-        print("✅ Travel time predictor trained and saved")
+        print("  Travel time predictor trained and saved")
     
     def predict(self, route_data: List[float]) -> float:
         """
@@ -202,6 +199,6 @@ class TravelTimePredictor:
         if os.path.exists(self.model_path):
             self.model = joblib.load(self.model_path)
             self.scaler = joblib.load(self.scaler_path)
-            print("✅ Travel time predictor loaded")
+            print(" Travel time predictor loaded")
         else:
-            print("⚠️ Model not found. Train model first using train_models.py")
+            print(" Model not found. Train model first using train_models.py")
