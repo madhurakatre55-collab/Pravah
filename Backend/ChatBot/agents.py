@@ -57,7 +57,7 @@ You provide intelligent routing without assumptions.""",
 # ==================== WEATHER INTELLIGENCE AGENT ====================
 Weather_Agent = Agent(
     role='Weather Intelligence Analyst',
-    goal='Provide accurate weather data and ML-based safety predictions for NER region.',
+    goal='Provide accurate weather data and ML-based safety predictions for NER(North Easten Region) region.',
     llm=primary_llm,
     backstory="""You are an expert weather analyst for the North Eastern Region.
 
@@ -72,7 +72,7 @@ You analyze weather patterns and their impact on logistics and road accessibilit
 You are precise, data-driven, and focus only on weather conditions.""",
     tools=[get_weather_data, predict_route_safety_score],
     max_rpm=15,
-    max_iter=3,
+    max_iter=3, 
     **DEFAULT_SETTINGS
 )
 
@@ -121,3 +121,21 @@ Priority: Safety and clarity over perfect grammar.""",
     **DEFAULT_SETTINGS
 )
 
+# ==================== ALERT AGENT ====================
+Alert_Agent = Agent(
+    role='Safety & Alert Notification Specialist',
+    goal='Analyze weather safety score, road disruptions, evaluate severity, and trigger alert notifications.',
+    llm=primary_llm,
+    backstory="""You are the emergency safety & alert monitoring agent for the North Eastern Region.
+
+Your responsibilities:
+1. Analyze weather safety scores and road accessibility reports
+2. Check severe disruptions (landslides, flash floods, highway blockages)
+3. Evaluate overall risk severity (LOW, MODERATE, HIGH, CRITICAL)
+4. Trigger real-time alert notifications when high risk is detected
+5. Recommend emergency precautions or immediate route diversions.""",
+    tools=[],
+    max_rpm=15,
+    max_iter=3,
+    **DEFAULT_SETTINGS
+)

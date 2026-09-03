@@ -6,17 +6,17 @@ from dotenv import load_dotenv
 
 from agents import (
     Orchestrator,
-    Weather_Risk_Agent,
-    Accessibility_Agent,
-    Route_Agent,
-    Alert_Agent
+    Weather_Agent,
+    Route_Accessibility_Agent,
+    Alert_Agent,
+    Translator_Agent
 )
 from tasks import (
     Orchestration_Task,
     Weather_Analysis_Task,
     Accessibility_Task,
-    Route_Optimization_Task,
     Alert_Monitoring_Task,
+    Translation_Task,
     Response_Merge_Task
 )
 from tools import detect_query_intent
@@ -38,10 +38,10 @@ class ChatbotOrchestrator:
     def __init__(self):
         """Initialize the orchestrator with all agents and routing rules."""
         self.orchestrator_agent = Orchestrator
-        self.weather_agent = Weather_Risk_Agent
-        self.accessibility_agent = Accessibility_Agent
-        self.route_agent = Route_Agent
+        self.weather_agent = Weather_Agent
+        self.accessibility_agent = Route_Accessibility_Agent
         self.alert_agent = Alert_Agent
+        self.translator_agent = Translator_Agent
         self.execution_results = {}
     
     def analyze_query_intent(self, query: str) -> Dict:
@@ -170,35 +170,30 @@ class ChatbotOrchestrator:
         print(f"Accessibility Analysis Complete")
         return result
     
-    def execute_route_optimization(self, start: str, end: str, 
-                                  weather_info: str = "", road_status: str = "") -> str:
+    def execute_translation(self, text: str, target_language: str = "hindi") -> str:
         """
-        Execute route optimization task.
+        Execute response translation task for regional accessibility.
         
         Args:
-            start (str): Starting location
-            end (str): Destination
-            weather_info (str): Weather information to consider
-            road_status (str): Road status information to consider
+            text (str): Final response text to translate
+            target_language (str): Target regional language
             
         Returns:
-            str: Route optimization result
+            str: Translated response result
         """
-        print(f"\n📍 Executing Route Optimization from {start} to {end}...")
+        print(f"\n🌐 Executing Translation to {target_language}...")
         
-        task = Route_Optimization_Task.copy()
+        task = Translation_Task.copy()
         task.description = task.description.format(
-            start_location=start,
-            end_location=end,
-            weather_info=weather_info or "Current weather data",
-            road_status=road_status or "Current road conditions"
+            response_text=text,
+            target_language=target_language
         )
         
-        crew = Crew(agents=[self.route_agent], tasks=[task])
+        crew = Crew(agents=[self.translator_agent], tasks=[task])
         result = crew.kickoff()
         
-        self.execution_results['route'] = result
-        print(f"Route Optimization Complete")
+        self.execution_results['translation'] = result
+        print(f"Translation Complete")
         return result
     
     def execute_alert_monitoring(self, location: str, radius: float = 5.0) -> str:
@@ -240,7 +235,7 @@ class ChatbotOrchestrator:
         task.description = task.description.format(
             weather_result=self.execution_results.get('weather', 'Not requested'),
             road_result=self.execution_results.get('accessibility', 'Not requested'),
-            route_result=self.execution_results.get('route', 'Not requested'),
+            route_result=self.execution_results.get('accessibility', 'Not requested'),
             alert_result=self.execution_results.get('alert', 'Not requested')
         )
         
@@ -283,11 +278,6 @@ class ChatbotOrchestrator:
         if routing_decision['invoke_accessibility'] and (start_location or location):
             route = f"{start_location} to {end_location}" if start_location and end_location else location
             self.execute_accessibility_analysis(route)
-        
-        if routing_decision['invoke_route'] and start_location and end_location:
-            weather_info = self.execution_results.get('weather', '')
-            road_status = self.execution_results.get('accessibility', '')
-            self.execute_route_optimization(start_location, end_location, weather_info, road_status)
         
         if routing_decision['invoke_alert'] and location:
             self.execute_alert_monitoring(location)

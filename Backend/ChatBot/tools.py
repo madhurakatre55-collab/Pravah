@@ -231,3 +231,39 @@ def translate_response(text: str, target_language: str = "hindi") -> dict:
     }
     
     return translation
+
+
+# ==================== TOOL 6: Detect Query Intent ====================
+@tool("Detect Query Intent")
+def detect_query_intent(query: str) -> dict:
+    """
+    Analyzes user query to determine intent and required agent routing.
+    
+    Args:
+        query (str): The user's question or request
+        
+    Returns:
+        dict: Intent analysis with flags for weather, route, alerts, etc.
+    """
+    query_lower = query.lower()
+    
+    # Keyword detection for different intents
+    weather_keywords = ['weather', 'temperature', 'rain', 'monsoon', 'storm', 'condition', 'climate', 'safe', 'safety', 'shillong', 'guwahati']
+    route_keywords = ['route', 'road', 'direction', 'path', 'way', 'drive', 'travel', 'sohra', 'highway', 'blocked', 'landslide', 'navigate']
+    alert_keywords = ['alert', 'accident', 'incident', 'danger', 'hazard', 'warning', 'emergency', 'risk', 'disruption']
+    
+    wants_weather = any(keyword in query_lower for keyword in weather_keywords)
+    wants_route = any(keyword in query_lower for keyword in route_keywords)
+    wants_alerts = any(keyword in query_lower for keyword in alert_keywords)
+    
+    return {
+        "original_query": query,
+        "wants_weather": wants_weather,
+        "wants_route": wants_route,
+        "wants_alerts": wants_alerts,
+        "agents_needed": {
+            "weather_agent": wants_weather,
+            "accessibility_agent": wants_route or wants_weather,
+            "alert_agent": wants_alerts or wants_route
+        }
+    }
