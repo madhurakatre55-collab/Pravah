@@ -13,14 +13,11 @@ from tools import (
 
 load_dotenv()
 
-# Patch cache breakpoint
-try:
-    import crewai.llms.cache
-    crewai.llms.cache.mark_cache_breakpoint = lambda message: {k: v for k, v in message.items() if k != "cache_breakpoint"}
+import crewai.llms.cache
+crewai.llms.cache.mark_cache_breakpoint = lambda message: {k: v for k, v in message.items() if k != "cache_breakpoint"}
 except Exception:
-    pass
+pass
 
-# Configure LLM
 api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")
 
 primary_llm = LLM(
@@ -37,7 +34,6 @@ DEFAULT_SETTINGS = {
     "max_execution_time": 300,
 }
 
-# Orchestrator Agent
 Orchestrator = Agent(
     role='Query Router & Response Orchestrator',
     goal='Analyze user queries, route to appropriate agents, and merge results into one coherent response.',
@@ -54,7 +50,6 @@ Your responsibilities:
     **DEFAULT_SETTINGS
 )
 
-# Weather Agent
 Weather_Agent = Agent(
     role='Weather Intelligence Analyst',
     goal='Provide accurate weather data and ML-based safety predictions for NER region.',
@@ -71,7 +66,6 @@ Your responsibilities:
     **DEFAULT_SETTINGS
 )
 
-# Accessibility Agent
 Route_Accessibility_Agent = Agent(
     role='Road Accessibility & Status Analyst',
     goal='Assess road conditions and provide real-time accessibility information for NER.',
@@ -88,7 +82,6 @@ Your responsibilities:
     **DEFAULT_SETTINGS
 )
 
-# Translator Agent
 Translator_Agent = Agent(
     role='Multilingual Response Translator',
     goal='Translate responses to regional NER languages for accessibility.',
@@ -104,7 +97,6 @@ Your responsibilities:
     **DEFAULT_SETTINGS
 )
 
-# Alert Agent
 Alert_Agent = Agent(
     role='Safety & Alert Notification Specialist',
     goal='Analyze weather safety score, road disruptions, evaluate severity, and trigger alert notifications.',
