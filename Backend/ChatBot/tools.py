@@ -1,33 +1,29 @@
 import os
-from crewai_tools import tool
+import json
 from dotenv import load_dotenv
+try:
+    from crewai.tools import tool
+    from crewai.tools.base_tool import Tool
+    Tool.__call__ = lambda self, *args, **kwargs: self.run(*args, **kwargs)
+except ImportError:
+    try:
+        from crewai_tools import tool
+    except ImportError:
+        pass
 from ml_models import WeatherPredictionModel
 from datetime import datetime
 
 load_dotenv()
 
-# ==================== INITIALIZE ML MODEL ====================
-# ONE ML Model: Weather Safety Prediction for NER
+# Weather ML model
 weather_ml_model = WeatherPredictionModel()
 
 
-# ==================== TOOL 1: Get Weather Data ====================
+# Tool 1
 @tool("Get Weather Data")
 def get_weather_data(location: str) -> dict:
-    """
-    Fetches current weather data for a specific NER location.
-    Provides real-time weather conditions for prediction.
-    
-    Args:
-        location (str): NER city/district name (Guwahati, Shillong, etc.)
-        
-    Returns:
-        dict: Weather data including temperature, rainfall, wind, visibility, humidity
-    """
-    # TODO: Replace with real OpenWeatherMap or IMD API
-    # Current: Mock data for testing
-    
-    mock_weather = {
+    """Fetch weather data."""
+    return {
         "location": location,
         "timestamp": datetime.now().isoformat(),
         "temperature_celsius": 22,
@@ -38,35 +34,21 @@ def get_weather_data(location: str) -> dict:
         "conditions": "Partly Cloudy",
         "data_source": "mock_data"
     }
-    
-    return mock_weather
 
 
-# ==================== TOOL 2: Predict Weather Safety (ML Model) ====================
+# Tool 2
 @tool("Predict Weather Safety Score")
 def predict_route_safety_score(temperature: float, precipitation: float, 
                                wind_speed: float, visibility: float) -> dict:
-    """
-    Uses trained ML model to predict weather safety score for logistics.
-    Safety Score: 0-100 (100 = Safe, 0 = Critical danger)
-    
-    Args:
-        temperature (float): Current temperature in Celsius
-        precipitation (float): Rainfall in millimeters
-        wind_speed (float): Wind speed in km/h
-        visibility (float): Visibility in kilometers
-        
-    Returns:
-        dict: Safety score, risk level, and recommendations
-    """
+    """Predict route safety score."""
     weather_features = [temperature, precipitation, wind_speed, visibility]
     
     try:
-        # ML Model Prediction
+        # Model prediction
         safety_score = weather_ml_model.predict(weather_features)
         safety_score = max(0, min(100, safety_score))
         
-        # Risk Classification
+        # Risk classification
         if safety_score >= 80:
             risk_level = "LOW"
             alert = "✅ Excellent conditions - Safe to transport"
@@ -95,40 +77,26 @@ def predict_route_safety_score(temperature: float, precipitation: float,
                 "wind_speed_kmh": wind_speed,
                 "visibility_km": visibility
             },
-            "model": "RandomForestRegressor (Trained on IMD data)",
+            "model": "RandomForestRegressor",
             "timestamp": datetime.now().isoformat()
         }
-    
     except Exception as e:
         return {
             "error": str(e),
-            "message": "Could not predict safety. Train model using: python train_models.py"
+            "message": "Model prediction failed"
         }
 
 
-# ==================== TOOL 3: Get Road Status ====================
+# Tool 3
 @tool("Get Road Status")
 def get_road_status(location: str, route_name: str = None) -> dict:
-    """
-    Fetches current road accessibility and status for NER locations.
-    Provides info on open/blocked routes, disruptions, accessibility.
-    
-    Args:
-        location (str): Location/city name
-        route_name (str, optional): Specific route to check
-        
-    Returns:
-        dict: Road status, accessibility, disruptions, estimated delays
-    """
-    # TODO: Replace with real API (Google Maps, NHAI Portal, State PWD APIs)
-    # Current: Mock data for testing
-    
-    road_data = {
+    """Fetch road status."""
+    return {
         "location": location,
         "route": route_name,
         "status": "open",
         "accessibility": True,
-        "traffic_level": "light",  # light, moderate, heavy
+        "traffic_level": "light",
         "congestion_percent": 15,
         "disruptions": [],
         "construction_zones": [],
@@ -136,28 +104,13 @@ def get_road_status(location: str, route_name: str = None) -> dict:
         "last_updated": datetime.now().isoformat(),
         "data_source": "mock_data"
     }
-    
-    return road_data
 
 
-# ==================== TOOL 4: Get Community Feedback ====================
+# Tool 4
 @tool("Get Community Feedback")
 def get_community_feedback(location: str, time_period_hours: int = 24) -> dict:
-    """
-    Gets anonymized community reports about road conditions and disruptions.
-    READ-ONLY from community database (anonymized, no identity stored).
-    
-    Args:
-        location (str): Location to get feedback for
-        time_period_hours (int): Last N hours of reports (default: 24)
-        
-    Returns:
-        dict: Aggregated community feedback about conditions
-    """
-    # TODO: Connect to your community database (separate feature)
-    # Current: Mock data for testing
-    
-    community_data = {
+    """Fetch community feedback."""
+    return {
         "location": location,
         "time_period_hours": time_period_hours,
         "total_reports": 5,
@@ -181,80 +134,100 @@ def get_community_feedback(location: str, time_period_hours: int = 24) -> dict:
         "verified_count": 4,
         "data_source": "Anonymous community reports"
     }
-    
-    return community_data
 
 
-# ==================== TOOL 5: Translate Response ====================
+# Tool 5
 @tool("Translate Response")
 def translate_response(text: str, target_language: str = "hindi") -> dict:
-    """
-    Translates chatbot responses to regional NER languages.
-    Supports 8 languages for inclusive accessibility.
-    
-    Args:
-        text (str): English text to translate
-        target_language (str): Target language code
-                              (hindi, assamese, bengali, manipuri, mizo, nagamese, khasi, english)
-        
-    Returns:
-        dict: Translated text in target language
-    """
-    # TODO: Replace with Google Translate API or LangChain Translator
-    # Current: Placeholder for testing
-    
+    """Translate response text."""
     supported_languages = {
         "english": "English",
         "hindi": "हिंदी",
         "assamese": "অসমীয়া",
         "bengali": "বাংলা",
-        "manipuri": "Manipuri",
+        "manipuri": "মৈতৈলোন্ (Manipuri)",
         "mizo": "Mizo",
         "nagamese": "Nagamese",
         "khasi": "Khasi"
     }
     
-    if target_language not in supported_languages:
+    target = target_language.lower().strip()
+    if target not in supported_languages:
+        target = "english"
+        
+    if target == "english":
         return {
-            "error": f"Language {target_language} not supported",
-            "supported_languages": list(supported_languages.keys())
+            "original_text": text,
+            "target_language": "English",
+            "language_code": "english",
+            "translated_text": text,
+            "timestamp": datetime.now().isoformat()
         }
-    
-    # Mock translation (replace with real API)
-    translation = {
+
+    # Load translations
+    trans_file = os.path.join(os.path.dirname(__file__), "translations.json")
+    translations = {}
+    if os.path.exists(trans_file):
+        try:
+            with open(trans_file, "r", encoding="utf-8") as f:
+                translations = json.load(f)
+        except Exception:
+            pass
+
+    translated_text = text
+    lang_dict = translations.get(target, {})
+    for eng_phrase, target_phrase in lang_dict.items():
+        translated_text = translated_text.replace(eng_phrase, target_phrase)
+
+    return {
         "original_text": text,
-        "target_language": supported_languages[target_language],
-        "language_code": target_language,
-        "translated_text": f"[{supported_languages[target_language]}] {text}",  # Placeholder
-        "translation_service": "Google Translate API (To be integrated)",
+        "target_language": supported_languages.get(target, target),
+        "language_code": target,
+        "translated_text": translated_text,
         "timestamp": datetime.now().isoformat()
     }
-    
-    return translation
 
 
-# ==================== TOOL 6: Detect Query Intent ====================
-@tool("Detect Query Intent")
+# Detect query intent
 def detect_query_intent(query: str) -> dict:
-    """
-    Analyzes user query to determine intent and required agent routing.
-    
-    Args:
-        query (str): The user's question or request
-        
-    Returns:
-        dict: Intent analysis with flags for weather, route, alerts, etc.
-    """
+    """Detect query intent."""
     query_lower = query.lower()
     
-    # Keyword detection for different intents
-    weather_keywords = ['weather', 'temperature', 'rain', 'monsoon', 'storm', 'condition', 'climate', 'safe', 'safety', 'shillong', 'guwahati']
-    route_keywords = ['route', 'road', 'direction', 'path', 'way', 'drive', 'travel', 'sohra', 'highway', 'blocked', 'landslide', 'navigate']
-    alert_keywords = ['alert', 'accident', 'incident', 'danger', 'hazard', 'warning', 'emergency', 'risk', 'disruption']
+    # Keyword detection
+    weather_keywords = [
+        'weather', 'temperature', 'rain', 'rainfall', 'monsoon', 'storm', 'cyclone',
+        'climate', 'wind', 'fog', 'visibility', 'sunny', 'cloudy'
+    ]
+    route_keywords = [
+        'route', 'road', 'highway', 'direction', 'path', 'way', 'drive', 'driving',
+        'travel', 'sohra', 'nh-6', 'nh6', 'nh-27', 'nh27', 'blocked', 'blockage',
+        'landslide', 'mudslide', 'navigate', 'navigation', 'truck', 'trucks',
+        'dispatch', 'cargo', 'freight', 'convoy', 'convoys', 'transport', 'transportation',
+        'transit', 'logistics', 'corridor', 'reach', 'trip', 'journey', 'destination'
+    ]
+    alert_keywords = [
+        'alert', 'accident', 'incident', 'danger', 'hazard', 'warning', 'emergency',
+        'risk', 'disruption', 'closure', 'flood', 'flooding', 'sinkhole', 'evacuation'
+    ]
     
     wants_weather = any(keyword in query_lower for keyword in weather_keywords)
     wants_route = any(keyword in query_lower for keyword in route_keywords)
     wants_alerts = any(keyword in query_lower for keyword in alert_keywords)
+    
+    # Check corridor pattern
+    if ' to ' in query_lower or ' from ' in query_lower:
+        wants_route = True
+
+    # Check dispatch words
+    safety_transport_words = ['safe', 'safety', 'dispatch', 'send', 'travel', 'drive', 'supply', 'supplies']
+    if any(w in query_lower for w in safety_transport_words):
+        wants_weather = True
+        wants_route = True
+        
+    # Default fallback intent
+    if not (wants_weather or wants_route or wants_alerts):
+        wants_weather = True
+        wants_route = True
     
     return {
         "original_query": query,
@@ -263,7 +236,7 @@ def detect_query_intent(query: str) -> dict:
         "wants_alerts": wants_alerts,
         "agents_needed": {
             "weather_agent": wants_weather,
-            "accessibility_agent": wants_route or wants_weather,
-            "alert_agent": wants_alerts or wants_route
+            "accessibility_agent": wants_route,
+            "alert_agent": wants_alerts or (wants_weather and wants_route)
         }
     }
