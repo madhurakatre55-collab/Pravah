@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — PRAVAH NER Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="view" id="view-auth">
+  <div class="auth-wrap">
+    <div class="auth-side">
+      <div class="brand-mark" id="brandAuth"></div>
+      <div class="quote">
+        “A single accessible corridor, found ten minutes sooner, can be the difference for a relief convoy in the hills.”
+        <span>— PRAVAH Field Operations Concept</span>
+      </div>
+      <div style="font-size:.75rem;color:#9FE0E8;">Smart India Hackathon · Problem Statement 26002</div>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-card">
+        <a href="#" onclick="go('landing');return false;" style="font-size:.8rem;color:var(--ink-soft);">← Back to overview</a>
+        <h2 style="margin-top:14px;font-size:1.5rem;">Welcome to PRAVAH</h2>
+        <p style="color:var(--ink-soft);font-size:.88rem;margin-top:6px;">Sign in to access the NER logistics command centre.</p>
+        <div class="auth-tabs">
+          <button id="tabLogin" class="active" onclick="setAuthTab('login')">Log in</button>
+          <button id="tabSignup" onclick="setAuthTab('signup')">Sign up</button>
+        </div>
+
+        <form id="formLogin" onsubmit="return handleLogin(event)">
+          <div class="field"><label>Email</label><input type="email" placeholder="you@department.gov.in" required></div>
+          <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+        </form>
+
+        <form id="formSignup" style="display:none;" onsubmit="return handleLogin(event)">
+          <div class="field"><label>Full name</label><input type="text" placeholder="A. Sharma" required></div>
+          <div class="field-row">
+            <div class="field"><label>Email</label><input type="email" placeholder="you@dept.gov.in" required></div>
+            <div class="field"><label>Phone</label><input type="tel" placeholder="98xxxxxxxx" required></div>
+          </div>
+          <div class="field"><label>Organization / Department</label><input type="text" placeholder="e.g. Assam PWD" required></div>
+          <div class="field-row">
+            <div class="field"><label>Role</label>
+              <select required>
+                <option value="">Select role</option>
+                <option>Government Official</option>
+                <option>Field Officer</option>
+                <option>Logistics Operator</option>
+                <option>Emergency Response</option>
+                <option>Administrator</option>
+              </select>
+            </div>
+            <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+          </div>
+          <div class="field"><label>Confirm password</label><input type="password" placeholder="••••••••" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Create account</button>
+        </form>
+
+        <div class="auth-divider">or</div>
+        <button class="btn btn-ghost btn-block" onclick="handleDemoLogin()">Continue as Demo User</button>
+        <div class="auth-foot">By continuing you agree this is a frontend prototype using demo data only.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

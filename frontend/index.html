@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRAVAH — NER Connect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============================================================
+     BRAND ICON (reused)
+     ============================================================ -->
+<template id="tpl-logo">
+  <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+    <circle cx="17" cy="17" r="16" fill="#0E7490"/>
+    <path d="M6 20c3-6 7 6 10 0s7-6 10 0" stroke="#5EEAD4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <circle cx="6" cy="20" r="2" fill="#38BDF8"/>
+    <circle cx="26" cy="20" r="2" fill="#38BDF8"/>
+  </svg>
+</template>
+
+<!-- ============================================================
+     LANDING PAGE
+     ============================================================ -->
+<div class="view active" id="view-landing">
+
+  <nav class="landing-nav">
+    <div class="brand-mark" id="brandLanding"></div>
+    <div class="links">
+      <a href="#why">Why PRAVAH</a>
+      <a href="#features">Features</a>
+      <a href="#emergency">Emergency</a>
+      <a href="#lang" onclick="return false;">EN / हिं</a>
+      <a href="#" class="btn btn-ghost btn-sm" onclick="go('auth');return false;">Log in</a>
+      <a href="#" class="btn btn-primary btn-sm" onclick="go('auth');return false;">Get Started</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">SIH 26002 · AI Logistics &amp; Accessibility Intelligence</span>
+      <h1>AI-powered logistics and accessibility intelligence for North East India</h1>
+      <p>PRAVAH brings live road accessibility, logistics movement, weather risk, AI route prediction and field reporting into a single command centre for the North Eastern Region.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary" onclick="go('auth')">Get Started</button>
+        <button class="btn btn-ghost" onclick="document.getElementById('why').scrollIntoView({behavior:'smooth'})">Explore Platform</button>
+      </div>
+      <div class="hero-stats">
+        <div><b>8</b><span>NER states covered</span></div>
+        <div><b>1,240+</b><span>km of corridors monitored</span></div>
+        <div><b>24/7</b><span>incident &amp; weather watch</span></div>
+      </div>
+    </div>
+      </section>
+
+  <section class="section" id="why">
+    <div class="section-head">
+      <span class="kicker">WHY PRAVAH</span>
+      <h2>Terrain that breaks ordinary logistics tools</h2>
+      <p>Steep gradients, monsoon landslides and thin road networks make the North East one of the hardest regions in India to keep moving. PRAVAH was built for exactly that terrain.</p>
+    </div>
+    <div class="challenge-list">
+      <div class="challenge-row"><span class="num">01</span><div><h3 style="font-size:.95rem;margin-bottom:4px;">Frequent road cut-offs</h3><p style="color:var(--ink-soft);font-size:.85rem;">Landslides and flash floods routinely sever single-road districts for days at a time.</p></div></div>
+      <div class="challenge-row"><span class="num">02</span><div><h3 style="font-size:.95rem;margin-bottom:4px;">Sparse connectivity data</h3><p style="color:var(--ink-soft);font-size:.85rem;">Field offices report status by phone; there is no shared, real-time picture.</p></div></div>
+      <div class="challenge-row"><span class="num">03</span><div><h3 style="font-size:.95rem;margin-bottom:4px;">Delayed emergency response</h3><p style="color:var(--ink-soft);font-size:.85rem;">Medical and relief convoys lose critical hours finding a passable route.</p></div></div>
+      <div class="challenge-row"><span class="num">04</span><div><h3 style="font-size:.95rem;margin-bottom:4px;">Unpredictable weather</h3><p style="color:var(--ink-soft);font-size:.85rem;">Rainfall intensity varies sharply across short distances in hill terrain.</p></div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker">COVERAGE</span>
+      <h2>Built state by state across the region</h2>
+    </div>
+    <div class="states-strip" id="statesStrip"></div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="section-head">
+      <span class="kicker">CORE FEATURES</span>
+      <h2>One command centre, every corridor</h2>
+      <p>From route intelligence to field reporting, PRAVAH gives every stakeholder the same live picture of the region.</p>
+    </div>
+    <div class="grid-cards" id="featureCards"></div>
+  </section>
+
+  <section class="section" id="emergency">
+    <div class="section-head">
+      <span class="kicker">EMERGENCY RESPONSE</span>
+      <h2>When every minute of a route matters</h2>
+      <p>PRAVAH's emergency mode surfaces the nearest accessible corridor for medical convoys and relief supply, with evacuation routes reserved for the moments they're needed most.</p>
+    </div>
+    <div class="grid-cards">
+      <div class="card"><div class="ic">🚑</div><h3>Medical supply corridors</h3><p>Prioritised routing for hospitals and district medical stores.</p></div>
+      <div class="card"><div class="ic">📦</div><h3>Relief supply corridors</h3><p>Pre-mapped paths to food and shelter distribution points.</p></div>
+      <div class="card"><div class="ic">🧭</div><h3>Evacuation routes</h3><p>Ranked alternates when the primary corridor is compromised.</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <span class="kicker">AI-POWERED · MULTILINGUAL · OFFLINE-READY</span>
+      <h2>Intelligence that works where connectivity doesn't</h2>
+    </div>
+    <div class="grid-cards">
+      <div class="card"><div class="ic">🧠</div><h3>AI route prediction</h3><p>Disruption and delay forecasts built from rainfall, incidents and history.</p></div>
+      <div class="card"><div class="ic">🌐</div><h3>9 regional languages</h3><p>English, Hindi and regional-language interfaces for field teams.</p></div>
+      <div class="card"><div class="ic">📴</div><h3>Offline field reporting</h3><p>Reports queue locally and sync the moment connectivity returns.</p></div>
+    </div>
+  </section>
+
+  <div class="cta-band">
+    <div>
+      <h2>See the North East move, in real time.</h2>
+      <p>Sign in with a demo account and explore the full command centre in minutes.</p>
+    </div>
+    <button class="btn btn-primary" style="background:#fff;color:var(--brand-deep);" onclick="go('auth')">Get Started →</button>
+  </div>
+
+  <footer class="footer">
+    <div class="brand-mark" style="justify-content:center;margin-bottom:10px;" id="brandFooter"></div>
+    <div>PRAVAH — NER Connect</div>
+    <div class="tag">Smart Logistics. Connected Regions. Faster Response.</div>
+  </footer>
+</div>
+
+<!-- ============================================================
+     AUTH PAGE
+     ============================================================ -->
+<div class="view" id="view-auth">
+  <div class="auth-wrap">
+    <div class="auth-side">
+      <div class="brand-mark" id="brandAuth"></div>
+      <div class="quote">
+        “A single accessible corridor, found ten minutes sooner, can be the difference for a relief convoy in the hills.”
+        <span>— PRAVAH Field Operations Concept</span>
+      </div>
+      <div style="font-size:.75rem;color:#9FE0E8;">Smart India Hackathon · Problem Statement 26002</div>
+    </div>
+    <div class="auth-form-wrap">
+      <div class="auth-card">
+        <a href="#" onclick="go('landing');return false;" style="font-size:.8rem;color:var(--ink-soft);">← Back to overview</a>
+        <h2 style="margin-top:14px;font-size:1.5rem;">Welcome to PRAVAH</h2>
+        <p style="color:var(--ink-soft);font-size:.88rem;margin-top:6px;">Sign in to access the NER logistics command centre.</p>
+        <div class="auth-tabs">
+          <button id="tabLogin" class="active" onclick="setAuthTab('login')">Log in</button>
+          <button id="tabSignup" onclick="setAuthTab('signup')">Sign up</button>
+        </div>
+
+        <form id="formLogin" onsubmit="return handleLogin(event)">
+          <div class="field"><label>Email</label><input type="email" placeholder="you@department.gov.in" required></div>
+          <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Log in</button>
+        </form>
+
+        <form id="formSignup" style="display:none;" onsubmit="return handleLogin(event)">
+          <div class="field"><label>Full name</label><input type="text" placeholder="A. Sharma" required></div>
+          <div class="field-row">
+            <div class="field"><label>Email</label><input type="email" placeholder="you@dept.gov.in" required></div>
+            <div class="field"><label>Phone</label><input type="tel" placeholder="98xxxxxxxx" required></div>
+          </div>
+          <div class="field"><label>Organization / Department</label><input type="text" placeholder="e.g. Assam PWD" required></div>
+          <div class="field-row">
+            <div class="field"><label>Role</label>
+              <select required>
+                <option value="">Select role</option>
+                <option>Government Official</option>
+                <option>Field Officer</option>
+                <option>Logistics Operator</option>
+                <option>Emergency Response</option>
+                <option>Administrator</option>
+              </select>
+            </div>
+            <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+          </div>
+          <div class="field"><label>Confirm password</label><input type="password" placeholder="••••••••" required></div>
+          <button class="btn btn-primary btn-block" type="submit">Create account</button>
+        </form>
+
+        <div class="auth-divider">or</div>
+        <button class="btn btn-ghost btn-block" onclick="handleDemoLogin()">Continue as Demo User</button>
+        <div class="auth-foot">By continuing you agree this is a frontend prototype using demo data only.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SHELL
+     ============================================================ -->
+<div class="view" id="view-shell">
+  <div class="shell" id="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head">
+        <div class="brand-mark" id="brandSidebar"></div>
+      </div>
+      <div class="nav-group" id="navGroup"></div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="sidebar-foot-text" id="sidebarToggleLabel">Collapse</span>
+      </button>
+      <div class="sidebar-foot sidebar-foot-text">PRAVAH v0.9 · Prototype build<br>Demo data only</div>
+    </aside>
+
+    <div class="main-col">
+      <header class="navbar">
+        <button class="icon-btn mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <div class="search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" placeholder="Search routes, vehicles, districts…">
+        </div>
+        <div class="navbar-right">
+          <span class="status-chip online" id="netStatus">🟢 Online</span>
+          <select class="lang-select" id="langSelect" onchange="setLang(this.value)">
+            <option value="en">EN — English</option>
+            <option value="hi">HI — हिन्दी</option>
+          </select>
+          <button class="icon-btn" onclick="go('app/notifications')" aria-label="Notifications">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+            <span class="badge-dot"></span>
+          </button>
+          <div class="user-chip">
+            <div class="avatar" id="userAvatar">DU</div>
+            <span style="font-size:.82rem;font-weight:600;" id="userName">Demo User</span>
+          </div>
+          <button class="icon-btn" onclick="handleLogout()" title="Log out" aria-label="Log out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </button>
+        </div>
+      </header>
+      <main class="page" id="pageContent"></main>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
