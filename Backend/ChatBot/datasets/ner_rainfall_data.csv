@@ -1,0 +1,19 @@
+state_subdivision,period,actual_rainfall_mm,normal_rainfall_mm,departure_percent
+Arunachal Pradesh,Weekly,53.8,70.9,-24
+Assam & Meghalaya,Weekly,76.1,80.4,-5
+Nagaland-Manipur-Mizoram-Tripura,Weekly,87.0,62.4,39
+Arunachal Pradesh,Seasonal,813.9,1344.2,-39
+Assam & Meghalaya,Seasonal,1068.0,1443.9,-26
+Nagaland-Manipur-Mizoram-Tripura,Seasonal,847.2,1043.2,-19
+Assam,Weekly,79.6,69.1,15
+Assam,Seasonal,948.3,1201.8,-21
+Manipur,Weekly,47.2,51.7,-9
+Manipur,Seasonal,502.2,856.4,-41
+Meghalaya,Weekly,64.5,117.7,-45
+Meghalaya,Seasonal,1473.7,2244.1,-34
+Mizoram,Weekly,132.4,77.9,70
+Mizoram,Seasonal,1049.8,1282.0,-18
+Nagaland,Weekly,82.9,52.2,59
+Nagaland,Seasonal,882.7,870.0,1
+Tripura,Weekly,85.0,65.8,29
+Tripura,Seasonal,977.0,1139.8,-14

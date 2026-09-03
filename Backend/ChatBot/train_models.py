@@ -10,25 +10,65 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 
+def load_real_imd_weather_data() -> tuple:
+    """
+    Load real IMD (India Meteorological Department) NER rainfall dataset.
+    Reads from: datasets/ner_rainfall_data.csv
+    """
+    dataset_path = os.path.join(os.path.dirname(__file__), "datasets", "ner_rainfall_data.csv")
+    
+    if os.path.exists(dataset_path):
+        print(f"[DATA] Loading real IMD dataset from: {dataset_path}")
+        df = pd.read_csv(dataset_path)
+        
+        # Convert rainfall & departure data into model features
+        np.random.seed(42)
+        samples = []
+        targets = []
+        
+        for _, row in df.iterrows():
+            actual_rain = float(row['actual_rainfall_mm'])
+            departure = float(row['departure_percent'])
+            
+            # Estimate regional temperature, wind, and visibility based on rainfall volume
+            temp = 22.0 - (actual_rain / 100.0)
+            wind = 10.0 + (abs(departure) * 0.3)
+            visibility = max(1.0, 15.0 - (actual_rain / 20.0))
+            
+            # Calculate actual safety score (0-100)
+            safety_score = 100 - (
+                (actual_rain / 120.0) * 45.0 +
+                (wind / 40.0) * 20.0 +
+                ((15.0 - visibility) / 15.0) * 35.0
+            )
+            safety_score = float(np.clip(safety_score, 0, 100))
+            
+            samples.append([temp, actual_rain, wind, visibility])
+            targets.append(safety_score)
+            
+        X = np.array(samples)
+        y = np.array(targets)
+        print(f"[DATA] Successfully loaded {len(df)} real IMD weather records.")
+        return X, y
+    else:
+        print("[DATA] Real dataset not found. Falling back to synthetic NER weather records...")
+        return generate_sample_weather_data(n_samples=1000)
+
+
 def generate_sample_weather_data(n_samples: int = 1000) -> tuple:
     """
     Generate sample NER weather training data.
-    
-    In production, use IMD/Kaggle historical data:
-    - IMD: https://mausam.imd.gov.in/
-    - Kaggle: https://kaggle.com/datasets?search=india+weather
     """
     print(f"[DATA] Generating {n_samples} sample NER weather records...")
     
     np.random.seed(42)
-    temperatures = np.random.uniform(5, 35, n_samples)          # 5-35°C (NER range)
-    precipitation = np.random.exponential(8, n_samples)         # 0-100+ mm (monsoon region)
-    wind_speeds = np.random.gamma(2, 2.5, n_samples)            # 0-40 km/h
-    visibility = np.random.uniform(0.5, 15, n_samples)          # 0.5-15 km
+    temperatures = np.random.uniform(5, 35, n_samples)
+    precipitation = np.random.exponential(8, n_samples)
+    wind_speeds = np.random.gamma(2, 2.5, n_samples)
+    visibility = np.random.uniform(0.5, 15, n_samples)
     
     X = np.column_stack([temperatures, precipitation, wind_speeds, visibility])
     
-    # Calculate safety score (0-100)
     safety_score = 100 - (
         (np.abs(temperatures - 22) / 35) * 10 +
         (precipitation / 120) * 40 +
@@ -45,16 +85,14 @@ def generate_sample_weather_data(n_samples: int = 1000) -> tuple:
 def generate_sample_route_risk_data(n_samples: int = 1000) -> tuple:
     """
     Generate sample NER route risk classification training data.
-    Features: [congestion_percent, weather_severity, hazard_proximity_km, road_condition_rating]
-    Targets: 0 (LOW), 1 (MODERATE), 2 (HIGH), 3 (CRITICAL)
     """
     print(f"[DATA] Generating {n_samples} sample NER route risk records...")
     
     np.random.seed(100)
-    congestion = np.random.uniform(5, 95, n_samples)            # 5-95%
-    weather_severity = np.random.uniform(0, 10, n_samples)      # 0-10 index
-    hazard_proximity = np.random.exponential(15, n_samples)     # distance in km
-    road_condition = np.random.uniform(10, 100, n_samples)      # 10-100 rating
+    congestion = np.random.uniform(5, 95, n_samples)
+    weather_severity = np.random.uniform(0, 10, n_samples)
+    hazard_proximity = np.random.exponential(15, n_samples)
+    road_condition = np.random.uniform(10, 100, n_samples)
     
     X = np.column_stack([congestion, weather_severity, hazard_proximity, road_condition])
     
@@ -84,9 +122,13 @@ def train_all_models():
     # 1. WEATHER PREDICTION MODEL
     print("STEP 1: Training Weather Safety Prediction Model")
     print("-" * 70)
-    X_w, y_w = generate_sample_weather_data(n_samples=1000)
-    X_w_train, X_w_test, y_w_train, y_w_test = train_test_split(X_w, y_w, test_size=0.2, random_state=42)
+    X_w, y_w = load_real_imd_weather_data()
     
+    if len(X_w) >= 10:
+        X_w_train, X_w_test, y_w_train, y_w_test = train_test_split(X_w, y_w, test_size=0.2, random_state=42)
+    else:
+        X_w_train, X_w_test, y_w_train, y_w_test = X_w, X_w, y_w, y_w
+        
     weather_model = WeatherPredictionModel()
     weather_model.train(X_w_train, y_w_train)
     

@@ -12,11 +12,13 @@ from tools import (
 
 load_dotenv()
 
-# Configure LLM
+# Configure LLM (Supports both GROQ_API_KEY and GROK_API_KEY)
+api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")
+
 primary_llm = LLM(
     model="groq/llama-3.3-70b-versatile",
     base_url="",
-    api_key=os.getenv("GROK_API_KEY")
+    api_key=api_key
 )
 
 DEFAULT_SETTINGS = {
