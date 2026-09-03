@@ -57,7 +57,7 @@ You provide intelligent routing without assumptions.""",
 # ==================== WEATHER INTELLIGENCE AGENT ====================
 Weather_Agent = Agent(
     role='Weather Intelligence Analyst',
-    goal='Provide accurate weather data and ML-based safety predictions for NER region.',
+    goal='Provide accurate weather data and ML-based safety predictions for NER(North Easten Region) region.',
     llm=primary_llm,
     backstory="""You are an expert weather analyst for the North Eastern Region.
 
@@ -72,7 +72,7 @@ You analyze weather patterns and their impact on logistics and road accessibilit
 You are precise, data-driven, and focus only on weather conditions.""",
     tools=[get_weather_data, predict_route_safety_score],
     max_rpm=15,
-    max_iter=3,
+    max_iter=3, 
     **DEFAULT_SETTINGS
 )
 
