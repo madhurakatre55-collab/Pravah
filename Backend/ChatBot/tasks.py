@@ -2,10 +2,10 @@ import os
 from crewai import Task
 from agents import (
     Orchestrator,
-    Weather_Risk_Agent,
-    Accessibility_Agent,
-    Route_Agent,
-    Alert_Agent
+    Weather_Agent,
+    Route_Accessibility_Agent,
+    Alert_Agent,
+    Translator_Agent
 )
 
 os.makedirs("task_output", exist_ok=True)
@@ -52,7 +52,7 @@ Weather_Analysis_Task = Task(
     - Safety assessment
     - Any warnings or alerts
     - Travel recommendations based on weather""",
-    agent=Weather_Risk_Agent,
+    agent=Weather_Agent,
     async_execution=False
 )
 
@@ -75,7 +75,7 @@ Accessibility_Task = Task(
     - Any closures or construction zones
     - Estimated delays
     - Accessibility recommendations""",
-    agent=Accessibility_Agent,
+    agent=Route_Accessibility_Agent,
     async_execution=False
 )
 
@@ -158,4 +158,21 @@ Response_Merge_Task = Task(
     agent=Orchestrator,
     async_execution=False
 )
+
+# ==================== TRANSLATION TASK ====================
+Translation_Task = Task(
+    description="""Translate the final aggregated response into the specified regional language.
+    
+    Response Text: {response_text}
+    Target Language: {target_language}
+    
+    Provide:
+    1. Clear translation of all alerts, weather status, and road conditions
+    2. Preserve safety scores and critical warning severity
+    3. Output in regional language format (Hindi, Assamese, Bengali, Mizo, etc.)""",
+    expected_output="""Translated final response ready for presentation.""",
+    agent=Translator_Agent,
+    async_execution=False
+)
+
 
