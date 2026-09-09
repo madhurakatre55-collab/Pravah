@@ -15,7 +15,7 @@ if parent_dir not in sys.path:
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-from ml_models import WeatherPredictionModel, RouteRiskClassifier
+from ml_models import WeatherPredictionModel
 from tools import (
     get_weather_data,
     predict_route_safety_score,
@@ -36,7 +36,6 @@ class TestPravahChatbotSuite(unittest.TestCase):
         print("=" * 75 + "\n")
         cls.orchestrator = ChatbotOrchestrator()
         cls.weather_model = WeatherPredictionModel()
-        cls.risk_classifier = RouteRiskClassifier()
         flask_app_module.app.testing = True
         cls.client = flask_app_module.app.test_client()
 
@@ -123,17 +122,19 @@ class TestPravahChatbotSuite(unittest.TestCase):
 
     # Category C
 
-    def test_11_route_risk_classifier_low_risk(self):
-        """Test low risk."""
-        pred = self.risk_classifier.predict([10.0, 1.0, 25.0, 90.0])
-        print(f"[TEST 11] Optimal Route: Risk={pred['risk_label']}, Confidence={pred['confidence']:.2f}")
-        self.assertIn(pred["risk_label"], ["LOW", "MODERATE"])
+    def test_11_weather_ml_model_feature_importance(self):
+        """Test feature importance."""
+        importance = self.weather_model.get_feature_importance()
+        self.assertIn("precipitation", importance)
+        self.assertIn("visibility", importance)
+        print(f"[TEST 11] Feature Importance: Rain={importance.get('precipitation', 0):.2f}, Visibility={importance.get('visibility', 0):.2f}")
 
-    def test_12_route_risk_classifier_critical_hazard(self):
-        """Test critical hazard."""
-        pred = self.risk_classifier.predict([85.0, 9.0, 0.5, 20.0])
-        print(f"[TEST 12] Imminent Landslide Route: Risk={pred['risk_label']}, Confidence={pred['confidence']:.2f}")
-        self.assertIn(pred["risk_label"], ["HIGH", "CRITICAL"])
+    def test_12_weather_ml_model_metadata(self):
+        """Test model info."""
+        info = self.weather_model.get_model_info()
+        self.assertEqual(info["model_type"], "RandomForestRegressor")
+        self.assertEqual(info["feature_count"], 4)
+        print(f"[TEST 12] Model Verified: {info['model_type']} with {info['feature_count']} features")
 
     def test_13_orchestrator_accessibility_guwahati_to_shillong(self):
         """Test accessibility corridor."""

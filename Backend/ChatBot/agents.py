@@ -13,10 +13,11 @@ from tools import (
 
 load_dotenv()
 
-import crewai.llms.cache
-crewai.llms.cache.mark_cache_breakpoint = lambda message: {k: v for k, v in message.items() if k != "cache_breakpoint"}
+try:
+    import crewai.llms.cache
+    crewai.llms.cache.mark_cache_breakpoint = lambda message: {k: v for k, v in message.items() if k != "cache_breakpoint"}
 except Exception:
-pass
+    pass
 
 api_key = os.getenv("GROQ_API_KEY") or os.getenv("GROK_API_KEY")
 

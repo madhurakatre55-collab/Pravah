@@ -1,7 +1,7 @@
 import os
 import joblib
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from typing import Dict, List
 
@@ -96,83 +96,3 @@ class WeatherPredictionModel:
             "scaler_path": self.scaler_path,
             "status": "Loaded" if self.model is not None else "Not loaded"
         }
-
-
-class RouteRiskClassifier:
-    """Route risk classifier."""
-    
-    def __init__(self):
-        self.model = None
-        self.scaler = StandardScaler()
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.model_dir = os.path.join(base_dir, "models")
-        self.model_path = os.path.join(self.model_dir, "route_risk_classifier.pkl")
-        self.scaler_path = os.path.join(self.model_dir, "route_scaler.pkl")
-        self.feature_names = ['congestion_percent', 'weather_severity', 'hazard_proximity_km', 'road_condition_rating']
-        self.risk_labels = {0: "LOW", 1: "MODERATE", 2: "HIGH", 3: "CRITICAL"}
-    
-    def train(self, X_train: np.ndarray, y_train: np.ndarray):
-        """Train classifier."""
-        print("[INFO] Training Route Risk Classifier...")
-        
-        # Scale features
-        X_scaled = self.scaler.fit_transform(X_train)
-        
-        # Train model
-        self.model = GradientBoostingClassifier(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=5,
-            random_state=42
-        )
-        self.model.fit(X_scaled, y_train)
-        
-        # Save model
-        os.makedirs(self.model_dir, exist_ok=True)
-        joblib.dump(self.model, self.model_path)
-        joblib.dump(self.scaler, self.scaler_path)
-        print("[INFO] Route risk classifier trained and saved to models/")
-    
-    def predict(self, route_data: List[float]) -> dict:
-        """Predict risk level."""
-        if self.model is None:
-            if not self.load():
-                # Fallback estimation
-                congestion, weather_sev, hazard_prox, road_cond = route_data
-                if hazard_prox < 2.0 or weather_sev > 8:
-                    return {"risk_code": 3, "risk_label": "CRITICAL", "confidence": 0.90}
-                elif hazard_prox < 10.0 or weather_sev > 5:
-                    return {"risk_code": 2, "risk_label": "HIGH", "confidence": 0.85}
-                elif congestion > 60 or road_cond < 40:
-                    return {"risk_code": 1, "risk_label": "MODERATE", "confidence": 0.80}
-                else:
-                    return {"risk_code": 0, "risk_label": "LOW", "confidence": 0.95}
-        
-        # Scale and predict
-        X_scaled = self.scaler.transform([route_data])
-        risk_code = int(self.model.predict(X_scaled)[0])
-        probabilities = self.model.predict_proba(X_scaled)[0]
-        confidence = float(np.max(probabilities))
-        
-        return {
-            "risk_code": risk_code,
-            "risk_label": self.risk_labels.get(risk_code, "UNKNOWN"),
-            "confidence": round(confidence, 4),
-            "feature_inputs": {
-                "congestion_percent": route_data[0],
-                "weather_severity": route_data[1],
-                "hazard_proximity_km": route_data[2],
-                "road_condition_rating": route_data[3]
-            }
-        }
-    
-    def load(self) -> bool:
-        """Load classifier files."""
-        if not os.path.exists(self.model_path) or not os.path.exists(self.scaler_path):
-            print("[WARN] Route risk classifier not found at:", self.model_path)
-            return False
-        
-        self.model = joblib.load(self.model_path)
-        self.scaler = joblib.load(self.scaler_path)
-        print("[INFO] Route risk classifier loaded successfully")
-        return True
